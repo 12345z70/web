@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>برنامه‌ریز درسی هوشمند</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Vazirmatn', Tahoma, sans-serif; }
+
+  body {
+    background: #0d1117;
+    color: #e6edf3;
+    min-height: 100vh;
+    padding: 20px 14px 60px;
+  }
+
+  .wrap { max-width: 480px; margin: 0 auto; }
+
+  header { text-align: center; margin-bottom: 24px; }
+  header h1 { font-size: 20px; font-weight: 800; color: #ffd166; }
+  header p { font-size: 12px; color: #7d8590; margin-top: 4px; }
+
+  .tabs {
+    display: flex;
+    background: #161b22;
+    border-radius: 14px;
+    padding: 5px;
+    margin-bottom: 20px;
+    border: 1px solid #21262d;
+  }
+  .tab {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #7d8590;
+    cursor: pointer;
+    transition: .2s;
+  }
+  .tab.active { background: #ffd166; color: #0d1117; }
+
+  .panel { display: none; }
+  .panel.active { display: block; animation: fadeIn .3s ease; }
+  @keyframes fadeIn { from { opacity:0; transform: translateY(8px);} to {opacity:1; transform: translateY(0);} }
+
+  .panel-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: #e6edf3;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* ---------- Pomodoro ---------- */
+  .timer-card {
+    background: linear-gradient(160deg, #161b22, #10141a);
+    border: 1px solid #21262d;
+    border-radius: 24px;
+    padding: 30px 20px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .mode-label {
+    font-size: 13px;
+    font-weight: 700;
+    padding: 6px 16px;
+    border-radius: 20px;
+    display: inline-block;
+    margin-bottom: 20px;
+  }
+  .mode-label.study { background: rgba(255,209,102,0.15); color: #ffd166; }
+  .mode-label.break { background: rgba(102,187,255,0.15); color: #66bbff; }
+
+  .ring-wrap { position: relative; width: 220px; height: 220px; margin: 0 auto 20px; }
+  svg.ring { transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: #21262d; stroke-width: 10; }
+  .ring-fg { fill: none; stroke: #ffd166; stroke-width: 10; stroke-linecap: round; transition: stroke-dashoffset .3s linear; }
+  .ring-time {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 42px; font-weight: 800; font-variant-numeric: tabular-nums;
+  }
+
+  .timer-controls { display: flex; gap: 8px; justify-content: center; margin-bottom: 14px; flex-wrap: wrap; }
+  .timer-controls button {
+    padding: 11px 16px;
+    border: none;
+    border-radius: 14px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .btn-main { background: #ffd166; color: #0d1117; }
+  .btn-stop { background: #3d4552; color: #e6edf3; }
+  .btn-end { background: #ff5252; color: #fff; }
+  .btn-second { background: #21262d; color: #e6edf3; }
+  .timer-controls button:active { transform: scale(.96); }
+  .timer-controls button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .duration-row { display: flex; gap: 8px; justify-content: center; }
+  .duration-row button {
+    background: #161b22; border: 1px solid #21262d; color: #7d8590;
+    padding: 6px 12px; border-radius: 10px; font-size: 12px; cursor: pointer;
+  }
+  .duration-row button.sel { background: #ffd166; color: #0d1117; border-color: #ffd166; }
+
+  .session-count { text-align:center; font-size: 12px; color: #7d8590; margin-top: 14px; }
+  .session-count b { color: #ffd166; }
+
+  /* ---------- Exams ---------- */
+  .add-form {
+    background: #161b22; border: 1px solid #21262d; border-radius: 16px;
+    padding: 16px; margin-bottom: 16px;
+  }
+  .add-form input {
+    width: 100%; background: #0d1117; border: 1px solid #21262d; color: #e6edf3;
+    padding: 10px 12px; border-radius: 10px; font-size: 13px; margin-bottom: 10px;
+  }
+  .add-form button {
+    width: 100%; background: #66bbff; color: #0d1117; border: none;
+    padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 14px;
+  }
+
+  .exam-card {
+    background: #161b22; border: 1px solid #21262d; border-radius: 16px;
+    padding: 14px 16px; margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .exam-info .subject { font-size: 14px; font-weight: 700; }
+  .exam-info .date { font-size: 11px; color: #7d8590; margin-top: 3px; }
+  .countdown {
+    text-align: center; padding: 8px 14px; border-radius: 12px; min-width: 62px;
+  }
+  .countdown .num { font-size: 20px; font-weight: 800; display:block; }
+  .countdown .lbl { font-size: 9px; color: #7d8590; }
+  .urgent { background: rgba(255,82,82,0.15); }
+  .urgent .num { color: #ff5252; }
+  .soon { background: rgba(255,209,102,0.15); }
+  .soon .num { color: #ffd166; }
+  .far { background: rgba(102,187,255,0.15); }
+  .far .num { color: #66bbff; }
+  .del-btn {
+    background: none; border: none; color: #7d8590; font-size: 16px; cursor: pointer; padding: 4px 8px;
+  }
+  .empty-msg { text-align: center; color: #555; font-size: 13px; padding: 30px 0; }
+
+  /* ---------- Motivation ---------- */
+  .refresh-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .refresh-row button {
+    flex: 1;
+    border: 1px solid #21262d;
+    border-radius: 12px;
+    padding: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .refresh-btn { background: #21262d; color: #66bbff; }
+  .reset-btn { background: #21262d; color: #ff5252; }
+  .refresh-row button:active { transform: scale(.97); }
+
+  .day-selected-label {
+    text-align: center;
+    font-size: 12px;
+    color: #7d8590;
+    margin-bottom: 10px;
+  }
+  .day-selected-label b { color: #ffd166; }
+
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .stat-box {
+    background: #161b22; border: 1px solid #21262d; border-radius: 14px;
+    padding: 16px; text-align: center;
+  }
+  .stat-box .val { font-size: 26px; font-weight: 800; color: #ffd166; }
+  .stat-box .lbl { font-size: 11px; color: #7d8590; margin-top: 4px; }
+
+  .streak-bar {
+    background: #161b22; border: 1px solid #21262d; border-radius: 14px;
+    padding: 16px; margin-bottom: 16px;
+  }
+  .streak-bar .title { font-size: 12px; color: #7d8590; margin-bottom: 10px; display:flex; align-items:center; gap:5px; }
+  .week-dots { display: flex; justify-content: space-between; }
+  .day-dot { text-align: center; font-size: 10px; color: #7d8590; }
+  .day-dot .circle {
+    width: 26px; height: 26px; border-radius: 50%; background: #21262d;
+    margin: 0 auto 5px; display:flex; align-items:center; justify-content:center; font-size: 12px;
+    cursor: pointer; transition: box-shadow .15s, transform .15s;
+  }
+  .day-dot .circle:active { transform: scale(.9); }
+  .day-dot .circle.done { background: #ffd166; color: #0d1117; }
+  .day-dot .circle.selected { box-shadow: 0 0 0 2px #66bbff; }
+
+  .total-box .stats-grid { margin-bottom: 0; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>📚 برنامه‌ریز درسی هوشمند</h1>
+    <p>پومودورو، تقویم امتحان‌ها و انگیزه، همه یه‌جا</p>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="pomodoro">⏱ پومودورو</div>
+    <div class="tab" data-tab="exams">📅 امتحان‌ها</div>
+    <div class="tab" data-tab="motivation">🔥 پیشرفت</div>
+  </div>
+
+  <!-- POMODORO -->
+  <div class="panel active" id="panel-pomodoro">
+    <div class="panel-title">⏱ تایمر پومودورو</div>
+    <div class="timer-card">
+      <div class="mode-label study" id="modeLabel">زمان مطالعه</div>
+      <div class="ring-wrap">
+        <svg class="ring" width="220" height="220">
+          <circle class="ring-bg" cx="110" cy="110" r="100"></circle>
+          <circle class="ring-fg" id="ringFg" cx="110" cy="110" r="100" stroke-dasharray="628" stroke-dashoffset="0"></circle>
+        </svg>
+        <div class="ring-time" id="timeDisplay">25:00</div>
+      </div>
+      <div class="timer-controls">
+        <button class="btn-main" id="startBtn">شروع</button>
+        <button class="btn-stop" id="stopBtn" disabled>استوپ</button>
+        <button class="btn-end" id="endBtn">پایان</button>
+        <button class="btn-second" id="resetBtn">ریست</button>
+      </div>
+      <div class="duration-row" id="durationRow">
+        <button data-min="25" class="sel">۲۵ دقیقه</button>
+        <button data-min="45">۴۵ دقیقه</button>
+        <button data-min="50">۵۰ دقیقه</button>
+      </div>
+      <div class="session-count">امروز <b id="sessionToday">0</b> پومودورو کامل کردی 🍅</div>
+    </div>
+  </div>
+
+  <!-- EXAMS -->
+  <div class="panel" id="panel-exams">
+    <div class="panel-title">📅 تقویم امتحان‌ها</div>
+    <div class="add-form">
+      <input type="text" id="examSubject" placeholder="نام درس یا امتحان (مثلاً ریاضی)">
+      <input type="date" id="examDate">
+      <button id="addExamBtn">افزودن به تقویم</button>
+    </div>
+    <div id="examList"></div>
+  </div>
+
+  <!-- MOTIVATION -->
+  <div class="panel" id="panel-motivation">
+    <div class="refresh-row">
+      <button class="refresh-btn" id="refreshBtn">🔄 بروزرسانی</button>
+      <button class="reset-btn" id="resetDataBtn">🗑 پاک کردن اطلاعات</button>
+    </div>
+    <div class="day-selected-label">تاریخ: <b id="selectedDayLabel">امروز</b></div>
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="val" id="daySessions">0</div>
+        <div class="lbl">پومودوروهای ثبت‌شده</div>
+      </div>
+      <div class="stat-box">
+        <div class="val" id="dayHours">0</div>
+        <div class="lbl">ساعت مطالعه</div>
+      </div>
+    </div>
+
+    <div class="streak-bar">
+      <div class="title">📊 روزهای هفته</div>
+      <div class="week-dots" id="weekDots"></div>
+    </div>
+
+    <div class="streak-bar total-box">
+      <div class="title">🗓 مجموع کل</div>
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="val" id="totalSessions">0</div>
+          <div class="lbl">کل پومودوروها</div>
+        </div>
+        <div class="stat-box">
+          <div class="val" id="totalHours">0</div>
+          <div class="lbl">کل ساعت مطالعه</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<audio id="dingSound" src="data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoAAAAAAAAAAAAAAA==" preload="auto"></audio>
+
+<script>
+/* ---------- Date helper (fixes weekday-shift bug from UTC ISO strings) ---------- */
+function dateKey(d) {
+  const y = d.getFullYear();
+  const m = (d.getMonth() + 1).toString().padStart(2, '0');
+  const day = d.getDate().toString().padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/* ---------- Tabs ---------- */
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+    if (tab.dataset.tab === 'exams') renderExams();
+    if (tab.dataset.tab === 'motivation') renderMotivation();
+  });
+});
+
+/* ---------- Pomodoro ---------- */
+let studyMinutes = 25;
+const breakMinutes = 5;
+let secondsLeft = studyMinutes * 60;
+let totalSeconds = studyMinutes * 60;
+let isStudyMode = true;
+let timerInterval = null;
+let isRunning = false;
+
+const timeDisplay = document.getElementById('timeDisplay');
+const ringFg = document.getElementById('ringFg');
+const modeLabel = document.getElementById('modeLabel');
+const startBtn = document.getElementById('startBtn');
+const stopBtn = document.getElementById('stopBtn');
+const endBtn = document.getElementById('endBtn');
+const circumference = 628;
+
+function updateDisplay() {
+  const m = Math.floor(secondsLeft / 60).toString().padStart(2, '0');
+  const s = (secondsLeft % 60).toString().padStart(2, '0');
+  timeDisplay.textContent = `${m}:${s}`;
+  const progress = secondsLeft / totalSeconds;
+  ringFg.style.strokeDashoffset = circumference * (1 - progress);
+  ringFg.style.stroke = isStudyMode ? '#ffd166' : '#66bbff';
+}
+
+function switchToBreak() {
+  isStudyMode = false;
+  totalSeconds = breakMinutes * 60;
+  secondsLeft = totalSeconds;
+  modeLabel.textContent = 'استراحت کن ☕';
+  modeLabel.className = 'mode-label break';
+}
+
+function switchToStudy() {
+  isStudyMode = true;
+  totalSeconds = studyMinutes * 60;
+  secondsLeft = totalSeconds;
+  modeLabel.textContent = 'زمان مطالعه';
+  modeLabel.className = 'mode-label study';
+}
+
+// زمان طبیعی تموم بشه (بدون اینکه کاربر دکمه‌ای بزنه) -> باز هم ثبت می‌شه، فقط برای همین تاریخ امروز
+function tick() {
+  secondsLeft--;
+  if (secondsLeft < 0) {
+    document.getElementById('dingSound').play().catch(()=>{});
+    if (isStudyMode) {
+      incrementSession();
+      switchToBreak();
+    } else {
+      switchToStudy();
+    }
+  }
+  updateDisplay();
+}
+
+function setRunningState(running) {
+  isRunning = running;
+  startBtn.disabled = running;
+  stopBtn.disabled = !running;
+}
+
+startBtn.addEventListener('click', () => {
+  if (isRunning) return;
+  timerInterval = setInterval(tick, 1000);
+  setRunningState(true);
+});
+
+// استوپ: فقط مکث می‌کنه، چیزی ثبت نمی‌شه
+stopBtn.addEventListener('click', () => {
+  if (!isRunning) return;
+  clearInterval(timerInterval);
+  setRunningState(false);
+});
+
+// پایان: همین الان جلسه رو (اگه توی حالت مطالعه‌ای) به‌عنوان کامل‌شده، برای تاریخ واقعی امروز ثبت می‌کنه
+endBtn.addEventListener('click', () => {
+  clearInterval(timerInterval);
+  setRunningState(false);
+  if (isStudyMode) {
+    incrementSession();
+    switchToBreak();
+  } else {
+    switchToStudy();
+  }
+  updateDisplay();
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  clearInterval(timerInterval);
+  setRunningState(false);
+  switchToStudy();
+  updateDisplay();
+});
+
+document.querySelectorAll('#durationRow button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#durationRow button').forEach(b => b.classList.remove('sel'));
+    btn.classList.add('sel');
+    studyMinutes = parseInt(btn.dataset.min);
+    clearInterval(timerInterval);
+    setRunningState(false);
+    switchToStudy();
+    updateDisplay();
+  });
+});
+
+function getStudyData() {
+  const raw = JSON.parse(localStorage.getItem('studyData') || '{"sessions":{},"minutes":{},"total":0}');
+  if (!raw.sessions) raw.sessions = {};
+  if (!raw.minutes) raw.minutes = {};
+  if (!raw.total) raw.total = 0;
+  return raw;
+}
+
+// این تابع فقط برای تاریخ واقعیِ همین لحظه ثبت می‌کنه، نه برای هیچ روز دیگه‌ای
+function incrementSession() {
+  const today = dateKey(new Date());
+  const data = getStudyData();
+  data.sessions[today] = (data.sessions[today] || 0) + 1;
+  data.minutes[today] = (data.minutes[today] || 0) + studyMinutes;
+  data.total = (data.total || 0) + 1;
+  localStorage.setItem('studyData', JSON.stringify(data));
+  document.getElementById('sessionToday').textContent = data.sessions[today];
+}
+
+function loadTodaySessions() {
+  const today = dateKey(new Date());
+  const data = getStudyData();
+  document.getElementById('sessionToday').textContent = data.sessions[today] || 0;
+}
+
+updateDisplay();
+loadTodaySessions();
+
+/* ---------- Exams ---------- */
+function getExams() {
+  return JSON.parse(localStorage.getItem('exams') || '[]');
+}
+function saveExams(exams) {
+  localStorage.setItem('exams', JSON.stringify(exams));
+}
+
+document.getElementById('addExamBtn').addEventListener('click', () => {
+  const subject = document.getElementById('examSubject').value.trim();
+  const date = document.getElementById('examDate').value;
+  if (!subject || !date) { alert('لطفاً نام درس و تاریخ رو وارد کن.'); return; }
+  const exams = getExams();
+  exams.push({ subject, date, id: Date.now() });
+  saveExams(exams);
+  document.getElementById('examSubject').value = '';
+  document.getElementById('examDate').value = '';
+  renderExams();
+});
+
+function renderExams() {
+  const exams = getExams().sort((a, b) => new Date(a.date) - new Date(b.date));
+  const list = document.getElementById('examList');
+  if (exams.length === 0) {
+    list.innerHTML = '<div class="empty-msg">هنوز امتحانی اضافه نکردی 📅</div>';
+    return;
+  }
+  list.innerHTML = '';
+  const now = new Date(); now.setHours(0,0,0,0);
+  exams.forEach(exam => {
+    const examDate = new Date(exam.date);
+    const diffDays = Math.ceil((examDate - now) / (1000 * 60 * 60 * 24));
+    let cls = 'far';
+    if (diffDays <= 3) cls = 'urgent';
+    else if (diffDays <= 10) cls = 'soon';
+
+    const div = document.createElement('div');
+    div.className = 'exam-card';
+    div.innerHTML = `
+      <div class="exam-info">
+        <div class="subject">${exam.subject}</div>
+        <div class="date">${new Date(exam.date).toLocaleDateString('fa-IR', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+      </div>
+      <div class="countdown ${cls}">
+        <span class="num">${diffDays >= 0 ? diffDays : 'گذشت'}</span>
+        <span class="lbl">${diffDays >= 0 ? 'روز مانده' : ''}</span>
+      </div>
+      <button class="del-btn" onclick="deleteExam(${exam.id})">✕</button>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function deleteExam(id) {
+  const exams = getExams().filter(e => e.id !== id);
+  saveExams(exams);
+  renderExams();
+}
+
+renderExams();
+
+/* ---------- Motivation ---------- */
+const dayNames = ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'];
+
+function renderMotivation() {
+  const data = getStudyData();
+
+  // مجموع کل (همیشه ثابت، مستقل از روز انتخاب‌شده)
+  document.getElementById('totalSessions').textContent = data.total || 0;
+  const totalMinutes = Object.values(data.minutes).reduce((a, b) => a + b, 0);
+  document.getElementById('totalHours').textContent = (totalMinutes / 60).toFixed(1);
+
+  // دایره‌های هفت روز اخیر، هرکدوم فقط برای تاریخ واقعی خودش تیک می‌خوره
+  const weekDots = document.getElementById('weekDots');
+  weekDots.innerHTML = '';
+  const todayKey = dateKey(new Date());
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = dateKey(d);
+    const done = (data.sessions[key] || 0) > 0;
+    const div = document.createElement('div');
+    div.className = 'day-dot';
+    div.innerHTML = `<div class="circle ${done ? 'done' : ''}" data-key="${key}">${done ? '✓' : ''}</div>${dayNames[d.getDay()]}`;
+    div.querySelector('.circle').addEventListener('click', () => showDayInfo(key, d));
+    weekDots.appendChild(div);
+  }
+  showDayInfo(todayKey, new Date());
+}
+
+function showDayInfo(key, dateObj) {
+  const data = getStudyData();
+  document.querySelectorAll('#weekDots .circle').forEach(c => {
+    c.classList.toggle('selected', c.dataset.key === key);
+  });
+
+  const sessions = data.sessions[key] || 0;
+  const minutes = data.minutes[key] || 0;
+
+  document.getElementById('daySessions').textContent = sessions;
+  document.getElementById('dayHours').textContent = (minutes / 60).toFixed(1);
+
+  const todayKey = dateKey(new Date());
+  document.getElementById('selectedDayLabel').textContent =
+    key === todayKey ? 'امروز' : dateObj.toLocaleDateString('fa-IR', { month: 'long', day: 'numeric' });
+}
+
+// دکمه بروزرسانی: فقط نمایش رو دوباره از اطلاعات ذخیره‌شده می‌سازه (چیزی پاک نمی‌شه)
+document.getElementById('refreshBtn').addEventListener('click', () => {
+  renderMotivation();
+});
+
+// دکمه پاک کردن: کل تاریخچه ذخیره‌شده (روزها و پومودوروها) رو پاک می‌کنه
+document.getElementById('resetDataBtn').addEventListener('click', () => {
+  const sure = confirm('مطمئنی؟ همه‌ی اطلاعات ثبت‌شده (پومودوروها و ساعت‌های مطالعه) برای همیشه پاک می‌شه.');
+  if (!sure) return;
+  localStorage.removeItem('studyData');
+  renderMotivation();
+  loadTodaySessions();
+});
+
+renderMotivation();
+</script>
+
+</body>
+</html>
